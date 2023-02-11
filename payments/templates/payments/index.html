@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>django_stripe|{{ title }}</title>
+</head>
+<body>
+<ul>
+    {% for item in items %}
+        <li><a href="{{ item.get_absolute_url }}">{{ item.name }}</a> price: ${{ item.get_display_price }}</li>
+    {% endfor %}
+</ul>
+
+</body>
+</html>
