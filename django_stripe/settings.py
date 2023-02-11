@@ -9,6 +9,8 @@ https://docs.djangoproject.com/en/4.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
+import os
+
 from decouple import config
 from pathlib import Path
 
@@ -111,12 +113,21 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'payments/static')
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# API ключи Stripe
 STRIPE_PYBLIC_KEY = config('Publishable_key')
 STRIPE_SECRET_KEY = config('Secret_key')
 STRIPE_WEBHOOK_SECRET = ''
+
+# сессия пользователя
+SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+CART_SESSION_ID = 'cart'
