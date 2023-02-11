@@ -17,7 +17,7 @@ class Item(models.Model):
 
     # определяем метод, которым выстраиваем ссылку для подробного описания объекта и передаем ее в шаблон
     def get_absolute_url(self):
-        return reverse('item_detail', kwargs={'item_id': self.pk})
+        return reverse('detail_item', kwargs={'item_id': self.pk})
 
     # данный метод вернет цену в долларах
     def get_display_price(self):
