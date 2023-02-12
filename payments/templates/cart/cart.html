@@ -32,7 +32,7 @@
                                         <td class="product-name">
                                             <h2 class="h5 text-black">{{ product_obj.name }}</h2>
                                         </td>
-                                        <td>${{ item.item.get_display_price }}</td>
+                                        <td>${{ product_obj.get_display_price }}</td>
                                         <td>{{ item.count_item }}</td>
                                         <td>${{ item.total_price }}</td>
                                         <td><a href="{% url 'remove_cart' product_obj.pk %}"
