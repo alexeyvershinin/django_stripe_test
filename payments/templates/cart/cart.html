@@ -75,12 +75,29 @@
                                     <strong class="text-black">{% cart_item_count %}</strong>
                                 </div>
                             </div>
-                            <div class="row mb-5">
+                            <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <span class="text-black">Total price</span>
+                                    <span class="text-black">Price without discount</span>
                                 </div>
                                 <div class="col-md-6 text-right">
                                     <strong class="text-black">${{ cart.get_total_full_price }}</strong>
+                                </div>
+                            </div>
+                            {% show_discount as discount_info %}
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <span class="text-black">Discount</span>
+                                </div>
+                                <div class="col-md-6 text-right">
+                                    <strong class="text-black">{{ discount_info.1 }}%</strong>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <span class="text-black">Final price</span>
+                                </div>
+                                <div class="col-md-6 text-right">
+                                    <strong class="text-black">${{ discount_info.0|floatformat:2 }}</strong>
                                 </div>
                             </div>
 

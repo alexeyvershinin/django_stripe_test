@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Item, Order, PositionOrder
+from .models import Item, Order, PositionOrder, Discount
 
 
 # Register your models here.
@@ -30,3 +30,6 @@ class PositionOrderAdmin(admin.ModelAdmin):
 
 # регистрируем модель и наш класс настроек
 admin.site.register(PositionOrder, PositionOrderAdmin)
+
+# регистрируем модель Discount
+admin.site.register(Discount)
