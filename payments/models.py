@@ -25,7 +25,7 @@ class Item(models.Model):
     def get_display_price(self):
         return '{0:.2f}'.format(self.price / 100)
 
-
+# заказ
 class Order(models.Model):
     date_create = models.DateTimeField(auto_now_add=True)
     order_price = models.FloatField(null=True)
@@ -38,9 +38,9 @@ class Order(models.Model):
     class Meta:
         ordering = ['-pk']
 
-
+# позиции в заказе
 class PositionOrder(models.Model):
     item = models.ForeignKey(Item, on_delete=models.PROTECT)
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     count_item = models.IntegerField()
-    price = models.IntegerField()
+    price = models.IntegerField(verbose_name='price in cents')

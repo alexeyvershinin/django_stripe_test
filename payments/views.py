@@ -4,7 +4,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 from payments.forms import CartAddProductForm
-from payments.models import Item
+from payments.models import Item, Order, PositionOrder
 from payments.cart import Cart
 import stripe
 
@@ -28,26 +28,41 @@ def item_detail(request, item_id):
     context = {
         'item': item,
         'title': item.name,
-        'STRIPE_PUBLIC_KEY': settings.STRIPE_PYBLIC_KEY,
+        # 'STRIPE_PUBLIC_KEY': settings.STRIPE_PYBLIC_KEY,
         'form': CartAddProductForm()
     }
     return render(request, 'payments/item_detail.html', context)
 
 
 # сессия платежа
-def create_session(request, item_id):
+def create_session(request):
     domain = 'http://' + request.META['HTTP_HOST']
-    item = Item.objects.get(id=item_id)
+    cart = Cart(request)
+
+    # Создаем заказ и записываем в него выбранные позиции корзины
+    order = Order.objects.create(order_price=cart.get_total_full_price())
+    for item in cart:
+        PositionOrder.objects.create(
+            order=order,
+            item=item['item'],
+            price=int(item['price_item']) * int(item['count_item']),
+            count_item=item['count_item'],
+        )
+
+    # Создаем строку с названиями и ценами товаров
+    items = '\n'.join(f"{item['item'].name}: {int(item['price_item']) / 100:.2f} USD" for item in cart)
+
+    # Создаем объект Checkout Session, который будет обрабатывать платеж
     session = stripe.checkout.Session.create(
         payment_method_types=['card'],
         line_items=[
             {
                 'price_data': {
                     'currency': 'usd',
-                    'unit_amount': item.price,
+                    'unit_amount': int(float(order.order_price) * 100),  # Цена в центах
                     'product_data': {
-                        'name': item.name,
-                        'description': item.description,
+                        'name': order,
+                        'description': items,
                     },
                 },
                 'quantity': 1,
@@ -57,19 +72,22 @@ def create_session(request, item_id):
         success_url=domain + '/checkout/success' + '/?session_id={CHECKOUT_SESSION_ID}',
         cancel_url=domain + '/checkout/cancel' + '/?session_id={CHECKOUT_SESSION_ID}',
     )
+
+    # Возвращаем ID Checkout Session в JSON-формате
     return JsonResponse({'session_id': session.id})
 
 
 # платеж прошел
 def success_view(request):
-    context = {'title': 'success'}
-    return render(request, 'payments/success.html', context)
+    Cart(request).clear()
+    messages.success(request, 'The payment was successful!')
+    return render(request, 'payments/messages.html', {'title': 'success'})
 
 
 # отмена платежа
 def cancel_view(request):
-    context = {'title': 'cancel'}
-    return render(request, 'payments/cancel.html', context)
+    messages.error(request, 'Payment cancelled!')
+    return render(request, 'payments/messages.html', {'title': 'cancel'})
 
 
 # добавление объекта в корзину
@@ -80,9 +98,12 @@ def cart_add(request, item_id):
     form = CartAddProductForm(request.POST)
 
     if form.is_valid():
-        cart.add(item=item_obj,
-                 count_item=form.cleaned_data['count_item'],
-                 update_count=form.cleaned_data['update'])
+        cart.add(
+            item=item_obj,
+            count_item=form.cleaned_data['count_item'],
+            update_count=form.cleaned_data['update']
+        )
+
     return redirect('list_cart')
 
 
@@ -100,14 +121,14 @@ def cart_info(request):
     cart = Cart(request)
     context = {
         'cart': cart,
-        'title': 'shopping cart'
+        'title': 'shopping cart',
+        'STRIPE_PUBLIC_KEY': settings.STRIPE_PYBLIC_KEY
     }
     return render(request, 'cart/cart.html', context)
 
 
 # очистка корзины
 def cart_clear(request):
-    cart = Cart(request)
-    cart.clear()
+    Cart(request).clear()
     messages.success(request, 'Cart has been successfully cleared')
     return redirect('home')

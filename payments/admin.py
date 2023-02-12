@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Item
+from .models import Item, Order, PositionOrder
 
 
 # Register your models here.
@@ -16,3 +16,17 @@ class ItemAdmin(admin.ModelAdmin):
 
 # регистрируем модель и наш класс настроек
 admin.site.register(Item, ItemAdmin)
+
+# регистрируем модель Order
+admin.site.register(Order)
+
+
+class PositionOrderAdmin(admin.ModelAdmin):
+    # список полей для отображения
+    list_display = ('id', 'order', 'item', 'count_item', 'price')
+    # поля, которые будут являться ссылками на объект
+    list_display_links = ('order',)
+
+
+# регистрируем модель и наш класс настроек
+admin.site.register(PositionOrder, PositionOrderAdmin)

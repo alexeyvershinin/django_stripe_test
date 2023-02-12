@@ -87,8 +87,23 @@
                             <div class="row">
                                 <div class="col-md-12">
                                     <button class="btn btn-primary btn-lg py-3 btn-block"
-                                            onclick="window.location='checkout.html'">Proceed To Checkout
+                                            onclick="buyItem()">Proceed To Checkout
                                     </button>
+
+                                    <script src="https://js.stripe.com/v3/"></script>
+                                    <script>
+                                        function buyItem() {
+                                            fetch(`{% url 'checkout' %}`)
+                                                .then(response => response.json())
+                                                .then(data => {
+                                                    const stripe = Stripe('{{ STRIPE_PUBLIC_KEY }}');
+                                                    stripe.redirectToCheckout({
+                                                        sessionId: data.session_id
+                                                    });
+                                                });
+                                        }
+                                    </script>
+
                                 </div>
                             </div>
                         </div>
