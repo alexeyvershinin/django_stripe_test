@@ -50,12 +50,14 @@ def create_session(request):
         )
 
     # Создаем строку с названиями и ценами товаров
-    items = '\n'.join(f"{item['item'].name}: {int(item['price_item']) / 100:.2f} USD" for item in cart)
+    items = '\n'.join(
+        f"- {item['item'].name}: {item['count_item']} pieces for {int(item['price_item']) / 100:.2f} USD" for item in
+        cart)
 
     # Создаем объект Checkout Session, который будет обрабатывать платеж
-    session = stripe.checkout.Session.create(
-        payment_method_types=['card'],
-        line_items=[
+    session_args = {
+        'payment_method_types': ['card'],
+        'line_items': [
             {
                 'price_data': {
                     'currency': 'usd',
@@ -68,10 +70,20 @@ def create_session(request):
                 'quantity': 1,
             },
         ],
-        mode="payment",
-        success_url=domain + '/checkout/success' + '/?session_id={CHECKOUT_SESSION_ID}',
-        cancel_url=domain + '/checkout/cancel' + '/?session_id={CHECKOUT_SESSION_ID}',
-    )
+        'mode': "payment",
+        'success_url': domain + '/checkout/success' + '/?session_id={CHECKOUT_SESSION_ID}',
+        'cancel_url': domain + '/checkout/cancel' + '/?session_id={CHECKOUT_SESSION_ID}'
+    }
+
+    # Забираем скидку из созданного заказа
+    discount = order.order_discount.discount_percentage
+
+    # Если скидка больше 0, то создаем купон и добавляем его в Checkout Session
+    if discount > 0:
+        coupon = stripe.Coupon.create(percent_off=discount, duration="once")
+        session_args['discounts'] = [{'coupon': coupon.id}]
+
+    session = stripe.checkout.Session.create(**session_args)
 
     # Возвращаем ID Checkout Session в JSON-формате
     return JsonResponse({'session_id': session.id})
