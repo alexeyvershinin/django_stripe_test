@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Item, Order, PositionOrder, Discount
+from .models import Item, Order, PositionOrder, Discount, Tax
 
 
 # Register your models here.
@@ -17,6 +17,7 @@ class ItemAdmin(admin.ModelAdmin):
 
 # регистрируем модель и наш класс настроек
 admin.site.register(Item, ItemAdmin)
+
 
 # регистрируем модель Order(заказ)
 admin.site.register(Order)
@@ -44,3 +45,15 @@ class DiscountAdmin(admin.ModelAdmin):
 
 # регистрируем модель и наш класс настроек
 admin.site.register(Discount, DiscountAdmin)
+
+
+# Налог
+class TaxAdmin(admin.ModelAdmin):
+    # список полей для отображения
+    list_display = ('id', 'name', 'tax_percentage')
+    # поля, которые будут являться ссылками на объект
+    list_display_links = ('id', 'name')
+
+
+# регистрируем модель и наш класс настроек
+admin.site.register(Tax, TaxAdmin)

@@ -9,11 +9,12 @@ from payments.models import Item, Order, PositionOrder
 from payments.cart import Cart
 import stripe
 
+# устанавливаем ключ Stripe API
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
 
 # Create your views here.
-# список объектов, главная страница
+# список всех элементов, главная страница
 def items_list(request):
     items = Item.objects.all()
     context = {
@@ -23,14 +24,13 @@ def items_list(request):
     return render(request, 'payments/index.html', context)
 
 
-# подробная информация об объекте
+# подробная информация об элементе
 def item_detail(request, item_id):
     item = get_object_or_404(Item, id=item_id)
     context = {
         'item': item,
         'title': item.name,
-        # 'STRIPE_PUBLIC_KEY': settings.STRIPE_PYBLIC_KEY,
-        'form': CartAddProductForm()
+        'form': CartAddProductForm()  # форма для добавления товаров в корзину
     }
     return render(request, 'payments/item_detail.html', context)
 
@@ -55,6 +55,16 @@ def create_session(request):
         f"- {item['item'].name}: {item['count_item']} pieces for {int(item['price_item']) / 100:.2f} USD" for item in
         cart)
 
+    # получаем процент налога из налоговой модели заказа, пока код предусматривает, что мы используем один налог
+    tax = order.tax.get(name='NDS')
+
+    # создаем объект налоговой ставки Stripe для сессии
+    tax_rate = stripe.TaxRate.create(
+        display_name=tax.name,
+        percentage=tax.tax_percentage,
+        inclusive=False  # налог не включен в стоимость
+    )
+
     # Создаем объект Checkout Session, который будет обрабатывать платеж
     session_args = {
         'payment_method_types': ['card'],
@@ -69,6 +79,7 @@ def create_session(request):
                     },
                 },
                 'quantity': 1,
+                'tax_rates': [tax_rate['id']]
             },
         ],
         'mode': "payment",
