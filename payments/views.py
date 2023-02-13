@@ -2,6 +2,7 @@ from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 from payments.forms import CartAddProductForm
 from payments.models import Item, Order, PositionOrder
@@ -71,16 +72,16 @@ def create_session(request):
             },
         ],
         'mode': "payment",
-        'success_url': domain + '/checkout/success' + '/?session_id={CHECKOUT_SESSION_ID}',
-        'cancel_url': domain + '/checkout/cancel' + '/?session_id={CHECKOUT_SESSION_ID}'
+        'success_url': domain + reverse('success') + '?session_id={CHECKOUT_SESSION_ID}',
+        'cancel_url': domain + reverse('cancel') + '?session_id={CHECKOUT_SESSION_ID}'
     }
 
     # Забираем скидку из созданного заказа
-    discount = order.order_discount.discount_percentage
+    discount = order.discount
 
-    # Если скидка больше 0, то создаем купон и добавляем его в Checkout Session
-    if discount > 0:
-        coupon = stripe.Coupon.create(percent_off=discount, duration="once")
+    # Если есть скидка, то создаем купон и добавляем его в Checkout Session
+    if discount:
+        coupon = stripe.Coupon.create(percent_off=discount.discount_percentage, duration="once")
         session_args['discounts'] = [{'coupon': coupon.id}]
 
     session = stripe.checkout.Session.create(**session_args)

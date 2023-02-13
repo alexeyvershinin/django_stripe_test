@@ -3,6 +3,7 @@ from .models import Item, Order, PositionOrder, Discount
 
 
 # Register your models here.
+# товары
 class ItemAdmin(admin.ModelAdmin):
     # список полей для отображения
     list_display = ('id', 'name', 'description', 'price')
@@ -17,10 +18,11 @@ class ItemAdmin(admin.ModelAdmin):
 # регистрируем модель и наш класс настроек
 admin.site.register(Item, ItemAdmin)
 
-# регистрируем модель Order
+# регистрируем модель Order(заказ)
 admin.site.register(Order)
 
 
+# позиции в заказе
 class PositionOrderAdmin(admin.ModelAdmin):
     # список полей для отображения
     list_display = ('id', 'order', 'item', 'count_item', 'price')
@@ -31,5 +33,14 @@ class PositionOrderAdmin(admin.ModelAdmin):
 # регистрируем модель и наш класс настроек
 admin.site.register(PositionOrder, PositionOrderAdmin)
 
-# регистрируем модель Discount
-admin.site.register(Discount)
+
+# Скидка
+class DiscountAdmin(admin.ModelAdmin):
+    # список полей для отображения
+    list_display = ('id', 'name', 'conditions')
+    # поля, которые будут являться ссылками на объект
+    list_display_links = ('id', 'name')
+
+
+# регистрируем модель и наш класс настроек
+admin.site.register(Discount, DiscountAdmin)

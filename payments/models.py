@@ -5,21 +5,12 @@ from django.urls import reverse
 # Create your models here.
 # скидка
 class Discount(models.Model):
-    order = models.OneToOneField('Order', on_delete=models.CASCADE, related_name="order_discount")
+    name = models.CharField(max_length=100, null=True)
     discount_percentage = models.PositiveIntegerField(default=0)
+    conditions = models.PositiveIntegerField(default=0)  # условия для скидки
 
-    # вычисляем и сохраняем скидку на заказ
-    def save(self, *args, **kwargs):
-        order_total = float(self.order.order_price)
-        if order_total >= 100:
-            self.discount_percentage = 10
-        elif order_total >= 50:
-            self.discount_percentage = 5
-        super().save(*args, **kwargs)
-
-    # возвращает строковое представление объекта.
     def __str__(self):
-        return f'{self.discount_percentage}% discount on {self.order}'
+        return self.name
 
 
 class Item(models.Model):
@@ -51,17 +42,25 @@ class Order(models.Model):
     order_price = models.FloatField(null=True)
     items = models.ManyToManyField(Item,
                                    through='PositionOrder')  # связь многие ко многим через таблицу PositionOrder
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        if self.order_price:
-            Discount.objects.get_or_create(order=self)
+    discount = models.ForeignKey(Discount, on_delete=models.SET_NULL, null=True)
 
     def __str__(self):
         return f'Order №{self.pk} dated {self.date_create.strftime("%b %d, %Y")}'
 
     class Meta:
         ordering = ['-pk']
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+        # получаем скидки, где условия ниже, чем общая стоимость заказа
+        discounts = Discount.objects.filter(conditions__lte=float(self.order_price)).order_by('-discount_percentage')
+
+        # применяем скидку к заказу
+        if discounts.exists():
+            discount = discounts.first()
+            self.discount = discount
+            self.__class__.objects.filter(pk=self.pk).update(discount=discount)
 
 
 # позиции в заказе
