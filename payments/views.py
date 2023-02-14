@@ -4,6 +4,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.urls import reverse
 from django.views.decorators.http import require_POST
+from rest_framework.decorators import api_view
+
 from payments.forms import CartAddProductForm
 from payments.models import Item, Order, PositionOrder
 from payments.cart import Cart
@@ -156,3 +158,47 @@ def cart_clear(request):
     Cart(request).clear()
     messages.success(request, 'Cart has been successfully cleared')
     return redirect('home')
+
+
+# прошу не обращать внимания на код ниже
+@api_view(['GET'])
+def buy_item_api(request, item_id):
+    domain = 'http://' + request.META['HTTP_HOST']
+    item = get_object_or_404(Item, pk=item_id)
+    session = stripe.checkout.Session.create(
+        payment_method_types=['card'],
+        line_items=[{
+            'price_data': {
+                'currency': 'usd',
+                'unit_amount': item.price,
+                'product_data': {
+                    'name': item.name,
+                },
+            },
+            'quantity': 1,
+        }],
+        mode='payment',
+        success_url=domain + reverse('success_api'),
+        cancel_url=domain + reverse('cancel_api'),
+    )
+    return JsonResponse({'session_id': session.id})
+
+
+@api_view(['GET'])
+def item_detail_api(request, item_id):
+    item = get_object_or_404(Item, pk=item_id)
+    context = {
+        'item': item,
+        'STRIPE_PUBLIC_KEY': settings.STRIPE_PYBLIC_KEY
+    }
+    return render(request, 'payments/item_detail_api.html', context)
+
+
+@api_view(['GET'])
+def cancel_view_api(request):
+    return render(request, 'payments/cancel_api.html', {'title': 'cancel'})
+
+
+@api_view(['GET'])
+def success_view_api(request):
+    return render(request, 'payments/success_api.html', {'title': 'success'})
